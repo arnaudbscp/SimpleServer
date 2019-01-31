@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <netinet/ip.h>
 #include <stdlib.h>
+#include <time.h>
 
 int main ( void)
 {
@@ -27,11 +28,16 @@ int main ( void)
 			/* traitement d ’ erreur */
 		}
 		/* On peut maintenant dialoguer avec le client */
-		//const char * message_bienvenue = " Bonjour , bienvenue sur mon serveur \n " ;
-		char buff[255];
-		FILE* file = fopen("text.txt", "r");
-		//write(socket_client,message_bienvenue,strlen(message_bienvenue));
-		write(socket_client, fgets(buff, 255, file), 100000);
-		fclose(file);
+		const char * message_bienvenue = " Bonjour , bienvenue sur mon serveur \n " ;
+		
+		int i;
+		for (i=0; i<10; i++) {	
+			write(socket_client,message_bienvenue,strlen(message_bienvenue));
+			sleep(1);
+		}
+		//char buff[255];
+		//FILE* file = fopen("text.txt", "r");
+		//write(socket_client, fgets(buff, 255, file), 100000);
+		//fclose(file);
 	}
 }
