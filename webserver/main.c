@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define BUFFER_SIZE 8000
+
 int main ( void)
 {
 	/* Arnold Robbins in the LJ of February ’95 , describing RCS 
@@ -28,16 +30,21 @@ int main ( void)
 			/* traitement d ’ erreur */
 		}
 		/* On peut maintenant dialoguer avec le client */
-		const char * message_bienvenue = " Bonjour , bienvenue sur mon serveur \n " ;
+		const char * message_bienvenue = "Bonjour, \nNous vous souhaitons la bienvenue sur notre serveur ! \nC'est un immense plaisir de vous voir ici. \nNous espérons que vous serez satisfait \net que tout se passera pour le mieux. \nEn attendant, \nnous vous souhaitons un agréable moment. \nSi vous rencontrez un quelconque problème \nn'hésitez pas à nous contacter.\nNous restons à votre entière disposition. \n";
 		
 		int i;
 		for (i=0; i<10; i++) {	
 			write(socket_client,message_bienvenue,strlen(message_bienvenue));
 			sleep(1);
 		}
-		//char buff[255];
-		//FILE* file = fopen("text.txt", "r");
+		/*char buffer[BUFFER_SIZE];
+		FILE* file = fopen("text.txt", "r");
 		//write(socket_client, fgets(buff, 255, file), 100000);
 		//fclose(file);
+		
+		while (fgets(buffer, BUFFER_SIZE, file) != NULL) {
+			write(socket_client, fgets(buffer, BUFFER_SIZE, file), BUFFER_SIZE);
+		}
+		fclose(file);*/
 	}
 }
