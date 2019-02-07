@@ -35,7 +35,7 @@ void initialiser_signaux (void) {
 	}
 }
 
-int main ( void)
+int main (void)
 {
 	/* Arnold Robbins in the LJ of February ’95 , describing RCS 
 	if ( argc > 1 && strcmp ( argv [1] , " -advice " ) == 0) {
@@ -52,10 +52,9 @@ int main ( void)
 	while(1) {
 		socket_client = accept(socket_serveur , NULL, NULL);
 		if (socket_client == -1){
-			perror ( "accept" );
-			/* traitement d ’ erreur */
+			perror ("accept");
+			//traitement d ’ erreur
 		}
-		/* On peut maintenant dialoguer avec le client */
 		const char * message_bienvenue = "Bonjour, \nNous vous souhaitons la bienvenue sur notre serveur ! \nC'est un immense plaisir de vous voir ici. \nNous espérons que vous serez satisfait \net que tout se passera pour le mieux. \nEn attendant, \nnous vous souhaitons un agréable moment. \nSi vous rencontrez un quelconque problème \nn'hésitez pas à nous contacter.\nNous restons à votre entière disposition. \n";
 		
 		int i;
@@ -73,9 +72,25 @@ int main ( void)
 		}
 		fclose(file);*/
 		
-		if (fork() == 0) {
-			close(socket_serveur);
-		}
-		close(socket_client);
+		/*
+		int pid = fork();
+		if (pid == 0) {
+ 			while(1) {
+				socket_client = accept(socket_serveur , NULL, NULL);
+				if (socket_client == -1){
+					perror ("accept");
+					//traitement d ’ erreur
+				}
+				const char * message_bienvenue = "Bonjour, \nNous vous souhaitons la bienvenue sur notre serveur ! \nC'est un immense plaisir de vous voir ici. \nNous espérons que vous serez satisfait \net que tout se passera pour le mieux. \nEn attendant, \nnous vous souhaitons un agréable moment. \nSi vous rencontrez un quelconque problème \nn'hésitez pas à nous contacter.\nNous restons à votre entière disposition. \n";
+		
+				int i;
+				for (i=0; i<10; i++) {	
+					write(socket_client,message_bienvenue,strlen(message_bienvenue));
+					sleep(1);
+				}
+			}
+		} else {
+			close(socket_serveur);		
+		}*/
 	}
 }
