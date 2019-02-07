@@ -7,31 +7,10 @@
 #include <netinet/ip.h>
 #include <stdlib.h>
 #include <time.h>
-#include <signal.h>
-#include <sys/wait.h>
 
 #define BUFFER_SIZE 8000
 
-void signal_handler (int sig) { 
-	printf ("Signal %d reçu \n", sig);
-}
-
-void initialiser_signaux (void){
-	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-		perror("signal");
-	}
-
-	struct sigaction s;
-	s.sa_handler = signal_handler;
-	sigemptyset(&s.sa_mask);
-	s.sa_flags = SA_RESTART;
-
-	if(sigaction(SIGCHLD, &s, NULL) == -1) {
-		perror("sigaction(SIGCHLD)");
-	}
-}
-
-int main (void)
+int main ( void)
 {
 	/* Arnold Robbins in the LJ of February ’95 , describing RCS 
 	if ( argc > 1 && strcmp ( argv [1] , " -advice " ) == 0) {
@@ -43,12 +22,11 @@ int main (void)
 
 	int socket_client;
 	int socket_serveur = creer_serveur(8080);
-	initialiser_signaux();
 
 	while(1) {
 		socket_client = accept(socket_serveur , NULL, NULL);
 		if (socket_client == -1){
-			perror ("accept");
+			perror ( "accept" );
 			/* traitement d ’ erreur */
 		}
 		/* On peut maintenant dialoguer avec le client */
