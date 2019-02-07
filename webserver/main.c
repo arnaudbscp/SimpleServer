@@ -7,8 +7,21 @@
 #include <netinet/ip.h>
 #include <stdlib.h>
 #include <time.h>
+#include <signal.h>
 
 #define BUFFER_SIZE 8000
+
+void signal_handler (int sig) { printf("Signal %d reçu \n", sig);}
+
+void initialiser_signaux (void) {
+	if(signal(SIGPIPE,SIG_IGN)==SIG_ERR){
+		perror ("signal");
+	}
+	struct sigaction s;
+	s.sa_handler= signal_handler;
+	sigemptyset(&s.sa_mask);
+	s.sa_flags = SA_RESTART;
+}
 
 int main ( void)
 {
@@ -22,6 +35,7 @@ int main ( void)
 
 	int socket_client;
 	int socket_serveur = creer_serveur(8080);
+	initialiser_signaux();
 
 	while(1) {
 		socket_client = accept(socket_serveur , NULL, NULL);
