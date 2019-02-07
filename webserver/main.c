@@ -8,10 +8,18 @@
 #include <stdlib.h>
 #include <time.h>
 #include <signal.h>
+#include <sys/wait.h>
 
 #define BUFFER_SIZE 8000
 
-void signal_handler (int sig) { printf("Signal %d reçu \n", sig);}
+void signal_handler (int sig) { 
+	printf("Signal %d reçu \n", sig);
+	while(1){
+		if(waitpid(-1, NULL, WNOHANG)<=0){
+			break;
+		}
+	}
+}
 
 void initialiser_signaux (void) {
 	if(signal(SIGPIPE,SIG_IGN)==SIG_ERR){
@@ -21,6 +29,10 @@ void initialiser_signaux (void) {
 	s.sa_handler= signal_handler;
 	sigemptyset(&s.sa_mask);
 	s.sa_flags = SA_RESTART;
+	
+	if (sigaction(SIGCHLD, &s, NULL) == -1) {
+		perror ("sigaction(SIGCHLD)");
+	}
 }
 
 int main ( void)
@@ -60,5 +72,10 @@ int main ( void)
 			write(socket_client, fgets(buffer, BUFFER_SIZE, file), BUFFER_SIZE);
 		}
 		fclose(file);*/
+		
+		if (fork() == 0) {
+			close(socket_serveur);
+		}
+		close(socket_client);
 	}
 }
