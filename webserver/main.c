@@ -49,7 +49,7 @@ int main (void)
 	int socket_serveur = creer_serveur(8080);
 	initialiser_signaux();
 
-	while(1) {
+	/*while(1) {
 		socket_client = accept(socket_serveur , NULL, NULL);
 		if (socket_client == -1){
 			perror ("accept");
@@ -62,7 +62,7 @@ int main (void)
 			write(socket_client,message_bienvenue,strlen(message_bienvenue));
 			sleep(1);
 		}
-		/*char buffer[BUFFER_SIZE];
+		char buffer[BUFFER_SIZE];
 		FILE* file = fopen("text.txt", "r");
 		//write(socket_client, fgets(buff, 255, file), 100000);
 		//fclose(file);
@@ -72,15 +72,17 @@ int main (void)
 		}
 		fclose(file);*/
 		
-		/*
-		int pid = fork();
-		if (pid == 0) {
- 			while(1) {
-				socket_client = accept(socket_serveur , NULL, NULL);
+		
+		
+ 		while(1) {
+			socket_client = accept(socket_serveur , NULL, NULL);
+			int pid = fork();
+			if (pid == 0) {
 				if (socket_client == -1){
 					perror ("accept");
 					//traitement d ’ erreur
 				}
+
 				const char * message_bienvenue = "Bonjour, \nNous vous souhaitons la bienvenue sur notre serveur ! \nC'est un immense plaisir de vous voir ici. \nNous espérons que vous serez satisfait \net que tout se passera pour le mieux. \nEn attendant, \nnous vous souhaitons un agréable moment. \nSi vous rencontrez un quelconque problème \nn'hésitez pas à nous contacter.\nNous restons à votre entière disposition. \n";
 		
 				int i;
@@ -88,9 +90,8 @@ int main (void)
 					write(socket_client,message_bienvenue,strlen(message_bienvenue));
 					sleep(1);
 				}
+			}else {
+				close(socket_client);		
 			}
-		} else {
-			close(socket_serveur);		
-		}*/
-	}
+		}
 }
