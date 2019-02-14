@@ -74,6 +74,15 @@ int main (void) {
 				write(socket_client, fgets(buffer, BUFFER_SIZE, file), BUFFER_SIZE);
 			}
 			fclose(file);*/
+			
+			while(1) {
+				char saisie[1000] = "";
+				if (read(socket_client, saisie, 1000) < 0) {
+					exit(0);
+				}
+				write(socket_client, saisie, strlen(saisie));
+			}
+
 		} else {
 			close(socket_client);		
 		}
