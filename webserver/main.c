@@ -60,7 +60,7 @@ int main (void) {
 		int pid = fork();
 		if (pid == 0) {
 			int i;
-			for (i=0; i<10; i++) {	
+			for (i=0; i<1; i++) {	
 				write(socket_client,message_bienvenue,strlen(message_bienvenue));
 				sleep(1);
 			}
