@@ -49,6 +49,7 @@ int main (void) {
 	initialiser_signaux();
 		
 	while(1) {
+		
 		socket_client = accept(socket_serveur , NULL, NULL);
 		if (socket_client == -1){
 			perror ("accept");
@@ -58,6 +59,8 @@ int main (void) {
 		const char * message_bienvenue = "Bonjour, \nNous vous souhaitons la bienvenue sur notre serveur ! \nC'est un immense plaisir de vous voir ici. \nNous espérons que vous serez satisfait \net que tout se passera pour le mieux. \nEn attendant, \nnous vous souhaitons un agréable moment. \nSi vous rencontrez un quelconque problème \nn'hésitez pas à nous contacter.\nNous restons à votre entière disposition. \n";
 
 		int pid = fork();
+
+		FILE * f = fdopen(socket_client,"w+");
 		if (pid == 0) {
 			int i;
 			for (i=0; i<1; i++) {	
@@ -74,16 +77,18 @@ int main (void) {
 				write(socket_client, fgets(buffer, BUFFER_SIZE, file), BUFFER_SIZE);
 			}
 			fclose(file);*/
-			
+
 			while(1) {
 				char saisie[1000] = "";
-				if (read(socket_client, saisie, 1000) < 0) {
+				char nomServeur[1000] = "<Arnisserveur> ";
+				if(fgets(saisie,sizeof(saisie),f) == NULL) {
 					exit(0);
 				}
-				write(socket_client, saisie, strlen(saisie));
+				strcat(nomServeur, saisie);
+				fprintf(f, nomServeur);
 			}
 
-		} else {
+		}else {
 			close(socket_client);		
 		}
 	}
