@@ -77,16 +77,46 @@ int main (void) {
 				write(socket_client, fgets(buffer, BUFFER_SIZE, file), BUFFER_SIZE);
 			}
 			fclose(file);*/
+			int lecture = 0;
 
 			while(1) {
 				char saisie[1000] = "";
 				char nomServeur[1000] = "<Arnisserveur> ";
+				
 				if(fgets(saisie,sizeof(saisie),f) == NULL) {
 					exit(0);
 				}
+
+				char * ligne1 = "GET / HTTP/1.1\r\n";
+				char * erreur = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 17\r\n\r\n400 Bad request\r\n";
 				strcat(nomServeur, saisie);
-				fprintf(f, nomServeur);
-			}
+
+				char * ligne1OK = "HTTP/1.1 200 OK\r\n";
+
+				if(strcmp(saisie, ligne1) == 0) {
+					lecture = 1;
+					fprintf(fdopen(1, "w+"), nomServeur);
+				}/*else if(strcmp(saisie, "\r\n") == 0){
+					fprintf(fdopen(1, "w+"), nomServeur);
+				}*/else {
+					if(lecture == 0) {
+					fprintf(fdopen(1, "w+"), erreur);
+					}
+				}
+
+				if(lecture == 1) {
+					if(strcmp(saisie, "\r\n") == 0) {
+						lecture = 0;
+						fprintf(f, ligne1OK);
+						fprintf(f,"Content-Length: %ld\r\n", strlen(message_bienvenue));
+						fprintf(f, message_bienvenue);
+					}
+				}else {
+					fprintf(f, nomServeur);
+				}
+				
+	
+			}	
 
 		}else {
 			close(socket_client);		
