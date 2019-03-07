@@ -89,18 +89,19 @@ int main (void) {
 
 				char * ligne1 = "GET / HTTP/1.1\r\n";
 				char * erreur = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 17\r\n\r\n400 Bad request\r\n";
+				char * erreur4 = "HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 15\r\n\r\n404 Not found\r\n";
 				strcat(nomServeur, saisie);
-
+				char * ligne404 = "GET /inexistant HTTP/1.1\r\n";
 				char * ligne1OK = "HTTP/1.1 200 OK\r\n";
 
 				if(strcmp(saisie, ligne1) == 0) {
 					lecture = 1;
 					fprintf(fdopen(1, "w+"), nomServeur);
-				}/*else if(strcmp(saisie, "\r\n") == 0){
-					fprintf(fdopen(1, "w+"), nomServeur);
-				}*/else {
+				}else if(strcmp(saisie, ligne404) == 0){
+					fprintf(fdopen(1, "w+"), erreur4);
+				}else {
 					if(lecture == 0) {
-					fprintf(fdopen(1, "w+"), erreur);
+						fprintf(fdopen(1, "w+"), erreur);
 					}
 				}
 
