@@ -9,8 +9,9 @@
 #include <time.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include "http_parse.h"
 
-#define BUFFER_SIZE 8000
+#define BUFFER_SIZE 1000
 
 void traitement_signal (int sig) { 
 	printf("Signal %d reçu \n", sig);
@@ -35,6 +36,29 @@ void initialiser_signaux (void) {
 	}
 }
 
+char * fgets_or_exit(char * buffer , int size , FILE * stream ){
+	if (fgets(buffer, size, stream) == NULL){	
+		exit(0);
+	} 
+	return buffer;
+}
+
+void skip_headers(FILE *client, char *saisie) {
+	fgets_or_exit(saisie, BUFFER_SIZE, client);
+	while (strcmp(&saisie[0], "\r\n") != 0 && strcmp(&saisie[0], "\n") != 0) {
+		fgets_or_exit(saisie, BUFFER_SIZE, client);
+	}
+}
+
+void send_status(FILE *client, int code, const char * reason_phrase) {
+	fprintf(client, "HTTP/1.1 %d %s\r\n", code, reason_phrase);
+}
+
+void send_response(FILE *client, int code, const char *reason_phrase, const char *message_body) {
+	send_status(client, code, reason_phrase);
+	fprintf(client, "Content-Length : %li\r\n\r\n%s", strlen(message_body), message_body);
+}
+
 int main (void) {
 	/* Arnold Robbins in the LJ of February ’95 , describing RCS 
 	if ( argc > 1 && strcmp ( argv [1] , " -advice " ) == 0) {
@@ -47,79 +71,58 @@ int main (void) {
 	int socket_client;
 	int socket_serveur = creer_serveur(8080);
 	initialiser_signaux();
+	http_request request;
 		
 	while(1) {
-		
 		socket_client = accept(socket_serveur , NULL, NULL);
 		if (socket_client == -1){
 			perror ("accept");
 			//traitement d ’ erreur
 		}
 
-		const char * message_bienvenue = "Bonjour, \nNous vous souhaitons la bienvenue sur notre serveur ! \nC'est un immense plaisir de vous voir ici. \nNous espérons que vous serez satisfait \net que tout se passera pour le mieux. \nEn attendant, \nnous vous souhaitons un agréable moment. \nSi vous rencontrez un quelconque problème \nn'hésitez pas à nous contacter.\nNous restons à votre entière disposition. \n";
+		char * message_bienvenue = "Bonjour, \nNous vous souhaitons la bienvenue sur notre serveur ! \nC'est un immense plaisir de vous voir ici. \nNous espérons que vous serez satisfait \net que tout se passera pour le mieux. \nEn attendant, \nnous vous souhaitons un agréable moment. \nSi vous rencontrez un quelconque problème \nn'hésitez pas à nous contacter.\nNous restons à votre entière disposition. \n";
 
 		int pid = fork();
-
 		FILE * f = fdopen(socket_client,"w+");
 		if (pid == 0) {
-			int i;
-			for (i=0; i<1; i++) {	
-				write(socket_client,message_bienvenue,strlen(message_bienvenue));
-				sleep(1);
-			}
-
-			/*char buffer[BUFFER_SIZE];
-			FILE* file = fopen("text.txt", "r");
-			write(socket_client, fgets(buff, 255, file), 100000);
-			fclose(file);
-			
-			while (fgets(buffer, BUFFER_SIZE, file) != NULL) {
-				write(socket_client, fgets(buffer, BUFFER_SIZE, file), BUFFER_SIZE);
-			}
-			fclose(file);*/
 			int lecture = 0;
-
 			while(1) {
-				char saisie[1000] = "";
-				char nomServeur[1000] = "<Arnisserveur> ";
-				
-				if(fgets(saisie,sizeof(saisie),f) == NULL) {
+				if (f == NULL) {
+					perror("Error opening file");
 					exit(0);
 				}
 
-				char * ligne1 = "GET / HTTP/1.1\r\n";
-				char * erreur = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 17\r\n\r\n400 Bad request\r\n";
-				char * erreur4 = "HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 15\r\n\r\n404 Not found\r\n";
+				char saisie[BUFFER_SIZE] = "";
+				char nomServeur[BUFFER_SIZE] = "<Arnisserveur> ";
+
+				fgets_or_exit(saisie, BUFFER_SIZE, f);
+
 				strcat(nomServeur, saisie);
 				char * ligne404 = "GET /inexistant HTTP/1.1\r\n";
-				char * ligne1OK = "HTTP/1.1 200 OK\r\n";
 
-				if(strcmp(saisie, ligne1) == 0) {
-					lecture = 1;
-					fprintf(fdopen(1, "w+"), nomServeur);
-				}else if(strcmp(saisie, ligne404) == 0){
-					fprintf(fdopen(1, "w+"), erreur4);
-				}else {
-					if(lecture == 0) {
-						fprintf(fdopen(1, "w+"), erreur);
-					}
-				}
-
-				if(lecture == 1) {
-					if(strcmp(saisie, "\r\n") == 0) {
-						lecture = 0;
-						fprintf(f, ligne1OK);
-						fprintf(f,"Content-Length: %ld\r\n", strlen(message_bienvenue));
-						fprintf(f, message_bienvenue);
-					}
-				}else {
+				if (parse_http_request(saisie, &request) != 0) {
+					skip_headers(f, saisie);
 					fprintf(f, nomServeur);
+					lecture = 1;
+				} else if (strcmp(saisie, ligne404) == 0){
+					send_response(f, 400, "Bad Request", "Bad request \r\n " );
+				
+				} else if (lecture == 0) {
+					send_response (f , 400 , " Bad Request " , " Bad request \r\n " );
+				} else if ( request . method == HTTP_UNSUPPORTED ) {
+					send_response (f , 405 , " Method Not Allowed " , " Method Not Allowed \r\n " );
+				} else {
+					send_response (f , 404 , " Not Found " , " Not Found \r\n " );
 				}
 				
-	
+				if (lecture == 1) {
+					lecture = 0;
+					send_response(f, 200, "OK", message_bienvenue);
+				} else {
+					fprintf(f, nomServeur);
+				}
 			}	
-
-		}else {
+		} else {
 			close(socket_client);		
 		}
 	}
