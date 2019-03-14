@@ -14,6 +14,9 @@
 
 #define BUFFER_SIZE 1000
 
+
+// A OUVRIR SUR CHROME UNE FOIS SERVEUR LANCE (C'EST MIEUX)
+
 void traitement_signal (int sig) { 
 	printf("Signal %d reçu \n", sig);
 	while(1){
@@ -38,7 +41,7 @@ void initialiser_signaux (void) {
 }
 
 char * fgets_or_exit(char * buffer , int size , FILE * stream ){
-	if (fgets(buffer, size, stream) == NULL){	
+	if (fgets(buffer, size, stream) == NULL){	 
 		exit(0);
 	} 
 	return buffer;
@@ -58,6 +61,25 @@ void send_status(FILE *client, int code, const char * reason_phrase) {
 void send_response(FILE *client, int code, const char *reason_phrase, const char *message_body) {
 	send_status(client, code, reason_phrase);
 	fprintf(client, "Content-Length : %li\r\n\r\n%s", strlen(message_body), message_body);
+}
+
+int copy(FILE *in, FILE *out) {
+	char c;
+	while(( c = fgetc(in)) != EOF) {
+		fputc(c,out);
+	}
+	return 1; 
+}
+
+
+void send_response_file(FILE *client, int code, const char *reason_phrase, FILE * in) {
+	send_status(client, code, reason_phrase);
+	int fd = fileno(in);
+	struct stat buf;
+	fstat(fd, &buf);
+	int size = buf.st_size;
+	fprintf(client, "Content-Length : %d\r\n\r\n", size);
+	copy(in,client);
 }
 
 char *rewrite_target(char *target) {
@@ -103,7 +125,7 @@ int main (void) {
 			//traitement d ’ erreur
 		}
 
-		char * message_bienvenue = "Bonjour, \nNous vous souhaitons la bienvenue sur notre serveur ! \nC'est un immense plaisir de vous voir ici. \nNous espérons que vous serez satisfait \net que tout se passera pour le mieux. \nEn attendant, \nnous vous souhaitons un agréable moment. \nSi vous rencontrez un quelconque problème \nn'hésitez pas à nous contacter.\nNous restons à votre entière disposition. \n";
+		//char * message_bienvenue = "Bonjour, \nNous vous souhaitons la bienvenue sur notre serveur ! \nC'est un immense plaisir de vous voir ici. \nNous espérons que vous serez satisfait \net que tout se passera pour le mieux. \nEn attendant, \nnous vous souhaitons un agréable moment. \nSi vous rencontrez un quelconque problème \nn'hésitez pas à nous contacter.\nNous restons à votre entière disposition. \n";
 
 		int pid = fork();
 		FILE * f = fdopen(socket_client,"w+");
@@ -116,16 +138,16 @@ int main (void) {
 				}
 
 				char saisie[BUFFER_SIZE] = "";
-				char nomServeur[BUFFER_SIZE] = "<Arnisserveur> ";
+				//char nomServeur[BUFFER_SIZE] = "<Arnisserveur> ";
 
 				fgets_or_exit(saisie, BUFFER_SIZE, f);
 
-				strcat(nomServeur, saisie);
+				//strcat(nomServeur, saisie);
 				char * ligne404 = "GET /inexistant HTTP/1.1\r\n";
 
 				if (parse_http_request(saisie, &request) != 0) {
 					skip_headers(f, saisie);
-					fprintf(f, nomServeur);
+					//fprintf(f, nomServeur);
 					lecture = 1;
 				} else if (strcmp(saisie, ligne404) == 0){
 					send_response(f, 400, "Bad Request", "Bad request\r\n" );
@@ -134,15 +156,19 @@ int main (void) {
 					send_response(f, 400, "Bad Request", "Bad request \r\n");
 				} else if (request.method == HTTP_UNSUPPORTED) {
 					send_response(f, 405 , "Method Not Allowed", "Method Not Allowed\r\n");
-				} else {
-					send_response (f, 404, "Not Found", "Not Found\r\n " );
-				}
+				} 
 				
 				if (lecture == 1) {
-					lecture = 0;
-					send_response(f, 200, "OK", message_bienvenue);
+							char *target = rewrite_target(request.target);
+							FILE * fichier = check_and_open(target, "racine");
+							if(fichier == NULL) {
+								send_response(f, 404, "Not Found", "Not Found\r\n");
+							}
+							lecture = 0;
+							send_response_file(f, 200, "OK", fichier);
+					
 				} else {
-					fprintf(f, nomServeur);
+					//fprintf(f, nomServeur);
 				}
 			}	
 		} else {
