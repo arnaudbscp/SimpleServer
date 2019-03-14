@@ -9,6 +9,7 @@
 #include <time.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include "http_parse.h"
 
 #define BUFFER_SIZE 1000
@@ -59,6 +60,28 @@ void send_response(FILE *client, int code, const char *reason_phrase, const char
 	fprintf(client, "Content-Length : %li\r\n\r\n%s", strlen(message_body), message_body);
 }
 
+char *rewrite_target(char *target) {
+	char * tmp  = strtok(target, "?");
+	strcpy(target, tmp);
+	int taille = strlen(target);
+	if(target[taille-1] == '/' || taille==0){
+		strcat(target, "index.html");
+	}
+	return target;
+}
+
+FILE *check_and_open(const char *target, const char *document_root) {
+	char con[50];
+	strcpy(con, document_root);
+	strcat(con, target);
+	struct stat s;
+	stat(con, &s);
+	if (S_ISREG(s.st_mode)) {
+		return fopen(con, "r");
+	}
+	return NULL;
+}
+
 int main (void) {
 	/* Arnold Robbins in the LJ of February ’95 , describing RCS 
 	if ( argc > 1 && strcmp ( argv [1] , " -advice " ) == 0) {
@@ -105,14 +128,14 @@ int main (void) {
 					fprintf(f, nomServeur);
 					lecture = 1;
 				} else if (strcmp(saisie, ligne404) == 0){
-					send_response(f, 400, "Bad Request", "Bad request \r\n " );
+					send_response(f, 400, "Bad Request", "Bad request\r\n" );
 				
 				} else if (lecture == 0) {
-					send_response (f , 400 , " Bad Request " , " Bad request \r\n " );
-				} else if ( request . method == HTTP_UNSUPPORTED ) {
-					send_response (f , 405 , " Method Not Allowed " , " Method Not Allowed \r\n " );
+					send_response(f, 400, "Bad Request", "Bad request \r\n");
+				} else if (request.method == HTTP_UNSUPPORTED) {
+					send_response(f, 405 , "Method Not Allowed", "Method Not Allowed\r\n");
 				} else {
-					send_response (f , 404 , " Not Found " , " Not Found \r\n " );
+					send_response (f, 404, "Not Found", "Not Found\r\n " );
 				}
 				
 				if (lecture == 1) {
